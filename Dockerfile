@@ -17,4 +17,4 @@ FROM mirror.camera360.com/base/centos7.8:basic
 WORKDIR /app
 COPY --from=builder /app/bin/* /app/bin/
 EXPOSE 9000/tcp
-ENTRYPOINT [ "/app/bin/app" ]
+CMD [ "/app/bin/app" ]
