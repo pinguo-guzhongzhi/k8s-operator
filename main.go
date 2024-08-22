@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 
 	"k8s.io/client-go/kubernetes"
@@ -28,6 +30,10 @@ func main() {
 	}
 	namespace = flag.String("namespace", "default", "namespace want to watch")
 	flag.Parse()
+
+	fmt.Println("namespace", namespace)
+	fmt.Println("kubeconfig", kubeconfig)
+	fmt.Println("uid", os.Getuid())
 
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
