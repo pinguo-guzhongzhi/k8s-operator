@@ -1,7 +1,10 @@
 FROM mirror.camera360.com/base/golang-builder:1.23.0 as builder
-COPY . /app
 WORKDIR /app
+COPY ./go.mod /app
+COPY ./go.sum /app
+RUN /bin/sh -c 'go mod download'
 
+COPY . /app
 ENV CGO_ENABLED=0
 ENV GO111MODULE=on
 #ENV GOPROXY=https://proxy.golang.com.cn,direct
