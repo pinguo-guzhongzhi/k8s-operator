@@ -41,11 +41,13 @@ func main() {
 		if err != nil {
 			log.Fatalf("Error building kubeconfig: %v", err)
 		}
+		return
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		log.Fatalf("Error creating clientset: %v", err)
+		return
 	}
 
 	watchlist := cache.NewListWatchFromClient(clientset.AppsV1().RESTClient(), "deployments", v1.NamespaceDefault, nil)
