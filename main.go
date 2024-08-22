@@ -16,7 +16,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -50,7 +49,8 @@ func main() {
 		return
 	}
 
-	watchlist := cache.NewListWatchFromClient(clientset.AppsV1().RESTClient(), "deployments", v1.NamespaceDefault, nil)
+	watchlist := cache.NewListWatchFromClient(clientset.AppsV1().RESTClient(), "deployments",
+		*namespace, nil)
 	_, controller := cache.NewInformer(
 		watchlist,
 		&appsv1.Deployment{},
@@ -61,7 +61,7 @@ func main() {
 				if hasNodeAffinity(&newDeployment.Spec.Template.Spec) {
 					newDeploymentCopy := newDeployment.DeepCopy()
 					newDeploymentCopy.Spec.Template.Spec.Affinity.NodeAffinity = nil
-					_, err := clientset.AppsV1().Deployments(v1.NamespaceDefault).Update(context.Background(), newDeploymentCopy, metav1.UpdateOptions{})
+					_, err := clientset.AppsV1().Deployments(*namespace).Update(context.Background(), newDeploymentCopy, metav1.UpdateOptions{})
 					if err != nil {
 						log.Printf("Error updating deployment: %v", err)
 					} else {
