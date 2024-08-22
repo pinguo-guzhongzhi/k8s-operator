@@ -1,6 +1,8 @@
 module awesomeProject1
 
-go 1.19
+go 1.22.0
+
+toolchain go1.23.0
 
 require (
 	k8s.io/api v0.31.0
