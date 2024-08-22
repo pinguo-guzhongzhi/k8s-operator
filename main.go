@@ -31,8 +31,8 @@ func main() {
 	namespace = flag.String("namespace", "default", "namespace want to watch")
 	flag.Parse()
 
-	fmt.Println("namespace", namespace)
-	fmt.Println("kubeconfig", kubeconfig)
+	fmt.Println("namespace", *namespace)
+	fmt.Println("kubeconfig", *kubeconfig)
 	fmt.Println("uid", os.Getuid())
 
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
