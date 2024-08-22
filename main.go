@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
@@ -21,16 +22,13 @@ import (
 
 func main() {
 	var kubeconfig *string
-	var namespace *string
 	if home := homedir.HomeDir(); home != "" {
 		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "absolute path to the kubeconfig file")
 	} else {
 		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
 	}
-	namespace = flag.String("namespace", "default", "namespace want to watch")
 	flag.Parse()
 
-	fmt.Println("namespace", *namespace)
 	fmt.Println("kubeconfig", *kubeconfig)
 	fmt.Println("uid", os.Getuid())
 
@@ -49,19 +47,37 @@ func main() {
 		return
 	}
 
+	selector := fields.Everything()
 	watchlist := cache.NewListWatchFromClient(clientset.AppsV1().RESTClient(), "deployments",
-		*namespace, nil)
+		metav1.NamespaceAll, selector)
 	_, controller := cache.NewInformer(
 		watchlist,
 		&appsv1.Deployment{},
 		0,
 		cache.ResourceEventHandlerFuncs{
-			UpdateFunc: func(oldObj, newObj interface{}) {
+			DeleteFunc: func(obj interface{}) {
+				fmt.Println("DeleteFunc")
+			},
+			AddFunc: func(newObj interface{}) {
 				newDeployment := newObj.(*appsv1.Deployment)
 				if hasNodeAffinity(&newDeployment.Spec.Template.Spec) {
 					newDeploymentCopy := newDeployment.DeepCopy()
-					newDeploymentCopy.Spec.Template.Spec.Affinity.NodeAffinity = nil
-					_, err := clientset.AppsV1().Deployments(*namespace).Update(context.Background(), newDeploymentCopy, metav1.UpdateOptions{})
+					newDeploymentCopy.Spec.Template.Spec.Affinity = nil
+					_, err := clientset.AppsV1().Deployments(newDeployment.Namespace).Update(context.Background(), newDeploymentCopy, metav1.UpdateOptions{})
+					if err != nil {
+						log.Printf("Error updating deployment: %v", err)
+					} else {
+						log.Printf("Removed node affinity from deployment %s", newDeploymentCopy.Name)
+					}
+				}
+			},
+			UpdateFunc: func(oldObj, newObj interface{}) {
+				newDeployment := newObj.(*appsv1.Deployment)
+
+				if hasNodeAffinity(&newDeployment.Spec.Template.Spec) {
+					newDeploymentCopy := newDeployment.DeepCopy()
+					newDeploymentCopy.Spec.Template.Spec.Affinity = nil
+					_, err := clientset.AppsV1().Deployments(newDeployment.Namespace).Update(context.Background(), newDeploymentCopy, metav1.UpdateOptions{})
 					if err != nil {
 						log.Printf("Error updating deployment: %v", err)
 					} else {
